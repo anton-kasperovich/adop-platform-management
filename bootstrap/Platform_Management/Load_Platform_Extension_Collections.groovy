@@ -5,15 +5,10 @@ def platformManagementFolder = folder(platformManagementFolderName) { displayNam
 // Jobs
 def loadPlatformExtensionCollectionJob = workflowJob(platformManagementFolderName + "/Load_Platform_Extension_Collection")
 
-
-// Setup Load_Cartridge Collection
+// Setup Load_Platform_Extension_Collection job
 loadPlatformExtensionCollectionJob.with{
     parameters{
         stringParam('COLLECTION_URL', '', 'URL to a JSON file defining your platform extension collection.')
-        credentialsParam("AWS_CREDENTIALS"){
-            type('com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl')
-            description('AWS access key and secret key for your account')
-        }
     }
     properties {
         rebuild {
@@ -41,9 +36,9 @@ loadPlatformExtensionCollectionJob.with{
         String url = data.extensions[i].url
         println("Platform Extension URL: " + url)
         String desc = data.extensions[i].description
-        build job: '/Platform_Management/Load_Platform_Extension', parameters: [[$class: 'StringParameterValue', name: 'GIT_URL', value: url], [$class: 'StringParameterValue', name: 'GIT_REF', value: 'master'], [$class: 'CredentialsParameterValue', name: 'AWS_CREDENTIALS', value: "${AWS_CREDENTIALS}"]]
+        String extType = data.extensions[i].extension_type
+        build job: '/Platform_Management/Load_Platform_Extension', parameters: [[$class: 'StringParameterValue', name: 'PLATFORM_EXTENSION_TYPE', value: extType], [$class: 'StringParameterValue', name: 'GIT_URL', value: url], [$class: 'StringParameterValue', name: 'GIT_REF', value: 'master'], [$class: 'StringParam', name: 'AWS_ACCESS_KEY_ID', value: "${AWS_ACCESS_KEY_ID}"], [$class: 'StringParam', name: 'AWS_SECRET_ACCESS_KEY', value: "${AWS_SECRET_ACCESS_KEY}"]]
     }
-
 }
 
 @NonCPS
@@ -57,4 +52,20 @@ loadPlatformExtensionCollectionJob.with{
             sandbox()
         }
     }
+    configure{ // using configure as DSL does not support the PasswordParameterDefinition property type.
+      project ->
+          project / 'properties' / 'hudson.model.ParametersDefinitionProperty' / 'parameterDefinitions' << 'hudson.model.PasswordParameterDefinition' {
+            'name'('AWS_ACCESS_KEY_ID')
+            'default'('')
+            'description'('AWS Access Key ID. Note: This parameter is only required for the AWS platform extension type.')
+          }
+      }
+      configure{
+        project ->
+            project / 'properties' / 'hudson.model.ParametersDefinitionProperty' / 'parameterDefinitions' << 'hudson.model.PasswordParameterDefinition' {
+              'name'('AWS_SECRET_ACCESS_KEY')
+              'default'('')
+              'description'('AWS Access Key ID. Note: This parameter is only required for the AWS platform extension type.')
+            }
+      }
 }
