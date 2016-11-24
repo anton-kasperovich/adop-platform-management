@@ -4,3 +4,4 @@ https://github.com/Accenture/adop-cartridge-chef.git
 https://github.com/Accenture/adop-cartridge-docker.git
 https://github.com/kramos/adop-cartridge-aspnet-linux.git
 https://github.com/kramos/adop-cartridge-flyway.git
+https://github.com/kramos/adop-cartridge-ansible-101.git
