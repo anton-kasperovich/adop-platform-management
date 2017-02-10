@@ -180,7 +180,7 @@ if [ -d service/ ] ; then
         if [ -f ${WORKSPACE}/service/${PLATFORM_EXTENSION_TYPE}/docker-compose.yml ] ; then
             SERVICE_NAME="Docker-Service-Extension-${PLATFORM_EXTENSION_NAME}-${BUILD_NUMBER}"
 
-            echo $(docker exec proxy jq -r '.core[0].components |= .+ [{"id": "'$SERVICE_NAME'", "title": "'$PLATFORM_EXTENSION_NAME'", "img": "'$PLATFORM_EXTENSION_IMAGE'", "description": "'$PLATFORM_EXTENSION_DESCRIPTION'", "link": {"host": "'$PLATFORM_EXTENSION_NAME'", "endPath": "/home"}}]' /usr/share/nginx/html/plugins.json) > plugins.json
+            echo $(docker exec proxy jq -r '.core[0].components |= .+ [{"id": "'$SERVICE_NAME'", "title": "'$PLATFORM_EXTENSION_NAME'", "img": "'$PLATFORM_EXTENSION_IMAGE'", "description": "'$PLATFORM_EXTENSION_DESCRIPTION'", "link": "", "linkCreate": {"host": "'$PLATFORM_EXTENSION_NAME'", "endPath": "/home"}}]' /usr/share/nginx/html/plugins.json) > plugins.json
             docker cp plugins.json proxy:/usr/share/nginx/html/plugins.json
 
             docker-compose -f ${WORKSPACE}/service/${PLATFORM_EXTENSION_TYPE}/docker-compose.yml -p ${SERVICE_NAME} up -d --force-recreate
