@@ -180,11 +180,6 @@ if [ -d service/ ] ; then
         if [ -f ${WORKSPACE}/service/${PLATFORM_EXTENSION_TYPE}/docker-compose.yml ] ; then
             SERVICE_NAME="Docker-Service-Extension-${PLATFORM_EXTENSION_NAME}-${BUILD_NUMBER}"
 
-            if [ ! "${CREDENTIALS}" = "adop-default" ]; then
-                DOCKER_PRIVATE_REPO=$(cat ${WORKSPACE}/service/${PLATFORM_EXTENSION_TYPE}/docker-compose.yml | grep image | awk '{print $2}' | cut -d/ -f1 | head -1)
-                docker login -u ${USERNAME} -p ${PASSWORD} -e example@example.com ${DOCKER_PRIVATE_REPO}
-            fi
-
             docker-compose -f ${WORKSPACE}/service/${PLATFORM_EXTENSION_TYPE}/docker-compose.yml -p ${SERVICE_NAME} up -d
         else
             echo "ERROR : /service/docker/docker-compose.yml not found."
