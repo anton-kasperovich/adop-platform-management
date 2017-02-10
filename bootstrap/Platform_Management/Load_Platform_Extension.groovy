@@ -13,13 +13,12 @@ loadPlatformExtensionJob.with{
         sshAgent('adop-jenkins-master')
     }
     parameters{
-        stringParam("GIT_URL",'',"The URL of the git repo for Platform Extension")
-        stringParam("GIT_REF","master","The reference to checkout from git repo of Platform Extension. It could be a branch name or a tag name. Eg : master, 0.0.1 etc")
-        credentialsParam("CREDENTIALS"){
-            type('com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl')
-            defaultValue('adop-default')
-            description('Platform extension credentials. Note: Leave at adop-default if credentials are not required.')
-        }
+      stringParam("GIT_URL",'',"The URL of the git repo for Platform Extension")
+      stringParam("GIT_REF","master","The reference to checkout from git repo of Platform Extension. It could be a branch name or a tag name. Eg : master, 0.0.1 etc")
+      credentialsParam("AWS_CREDENTIALS"){
+        type('com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl')
+        description('AWS access key and secret key for your account')
+      }
     }
     scm{
       git{
@@ -30,14 +29,14 @@ loadPlatformExtensionJob.with{
         branch('${GIT_REF}')
       }
     }
-    label("aws")
+    label("swarm")
     wrappers {
       preBuildCleanup()
       injectPasswords()
       maskPasswords()
       sshAgent("adop-jenkins-master")
       credentialsBinding {
-        usernamePassword("USERNAME", "PASSWORD", '${CREDENTIALS}')
+        usernamePassword("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", '${AWS_CREDENTIALS}')
       }
     }
     steps {
@@ -181,11 +180,6 @@ if [ -d service/ ] ; then
         if [ -f ${WORKSPACE}/service/${PLATFORM_EXTENSION_TYPE}/docker-compose.yml ] ; then
             SERVICE_NAME="Docker-Service-Extension-${PLATFORM_EXTENSION_NAME}-${BUILD_NUMBER}"
 
-            if [ ! "${CREDENTIALS}" = "adop-default" ]; then
-                DOCKER_PRIVATE_REPO=$(cat ${WORKSPACE}/service/${PLATFORM_EXTENSION_TYPE}/docker-compose.yml | grep image | awk '{print $2}' | cut -d/ -f1 | head -1)
-                docker login -u ${USERNAME} -p ${PASSWORD} -e example@example.com ${DOCKER_PRIVATE_REPO}
-            fi
-
             docker-compose -f ${WORKSPACE}/service/${PLATFORM_EXTENSION_TYPE}/docker-compose.yml -p ${SERVICE_NAME} up -d
         else
             echo "ERROR : /service/docker/docker-compose.yml not found."
@@ -216,7 +210,15 @@ for file in $(ls ${WORKSPACE}/service/${PLATFORM_EXTENSION_TYPE}/*.{conf,ext} 2>
       DEPLOY_DIR=/etc/nginx/sites-enabled/
     fi
 
-    docker cp ${file} proxy:${DEPLOY_DIR}${COUNT}-${SERVICE_NAME}.conf
+    CHECK_PROXY_DEPLOY_DIR_EXISTS=$(docker exec -t proxy /bin/sh -c "ls ${DEPLOY_DIR} > /dev/null" ; echo $?)
+
+    if [ "${CHECK_PROXY_DEPLOY_DIR_EXISTS}" != "0" ] ; then
+      echo "ERROR: Unable to deploy proxy configuration to ${DEPLOY_DIR}."
+      echo "ERROR: This version of the platform does not support this proxy configuration deployment method. A platform upgrade is required."
+      exit 1
+    else
+      docker cp ${file} proxy:${DEPLOY_DIR}${COUNT}-${SERVICE_NAME}.conf
+    fi
 
     COUNT=$((COUNT+1))
     RELOAD_PROXY=true

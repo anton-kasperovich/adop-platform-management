@@ -8,13 +8,11 @@ def loadPlatformExtensionCollectionJob = workflowJob(platformManagementFolderNam
 
 // Setup Load_Cartridge Collection
 loadPlatformExtensionCollectionJob.with{
-    description("This job loads a collection of platform extensions.")
     parameters{
         stringParam('COLLECTION_URL', '', 'URL to a JSON file defining your platform extension collection.')
-        credentialsParam("CREDENTIALS"){
+        credentialsParam("AWS_CREDENTIALS"){
             type('com.cloudbees.plugins.credentials.impl.UsernamePasswordCredentialsImpl')
-            defaultValue('adop-default')
-            description('Platform extension credentials. Note: Leave at adop-default if credentials are not required.')
+            description('AWS access key and secret key for your account')
         }
     }
     properties {
@@ -43,7 +41,7 @@ loadPlatformExtensionCollectionJob.with{
         String url = data.extensions[i].url
         println("Platform Extension URL: " + url)
         String desc = data.extensions[i].description
-        build job: '/Platform_Management/Load_Platform_Extension', parameters: [[$class: 'StringParameterValue', name: 'GIT_URL', value: url], [$class: 'StringParameterValue', name: 'GIT_REF', value: 'master'], [$class: 'CredentialsParameterValue', name: 'CREDENTIALS', value: "${CREDENTIALS}"]]
+        build job: '/Platform_Management/Load_Platform_Extension', parameters: [[$class: 'StringParameterValue', name: 'GIT_URL', value: url], [$class: 'StringParameterValue', name: 'GIT_REF', value: 'master'], [$class: 'CredentialsParameterValue', name: 'AWS_CREDENTIALS', value: "${AWS_CREDENTIALS}"]]
     }
 
 }
